@@ -5,7 +5,9 @@ __pycache__/
 
 # Environment variables
 .env
-.env.*
+.env.local
+.env.production
+!.env.example
 
 # Node
 node_modules/
@@ -13,6 +15,7 @@ node_modules/
 # Frontend builds
 dist/
 build/
+.vite/
 
 # Fingerprint dataset
 fingerprint-matcher/dataset/
@@ -26,9 +29,6 @@ backend/uploads/
 # OS
 .DS_Store
 Thumbs.db
-
-# Nested repo (accidental clone)
-metro-biometric-ticketing/
 
 # IDE config
 pyrightconfig.json

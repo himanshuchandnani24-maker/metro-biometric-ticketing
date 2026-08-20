@@ -1,4 +1,8 @@
+from datetime import date, datetime
+from decimal import Decimal
+
 from flask import Flask, jsonify
+from flask.json.provider import DefaultJSONProvider
 from flask_cors import CORS  # type: ignore
 from config import Config
 
@@ -9,10 +13,25 @@ from routes.trip_routes import trip_bp
 from routes.admin_routes import admin_bp
 from routes.fingerprint_routes import fingerprint_bp
 
+
+class ApiJSONProvider(DefaultJSONProvider):
+    """Serialize MySQL datetime/Decimal values so history and admin APIs work from the frontend."""
+
+    def default(self, o):
+        if isinstance(o, datetime):
+            return o.isoformat()
+        if isinstance(o, date):
+            return o.isoformat()
+        if isinstance(o, Decimal):
+            return float(o)
+        return super().default(o)
+
+
 def create_app():
     app = Flask(__name__)
     app.config.from_object(Config)
-    
+    app.json = ApiJSONProvider(app)
+
     CORS(app)
     
     # Register blueprints
