@@ -1,8 +1,8 @@
 -- Demo Users
-INSERT INTO users (name, email) VALUES
-('Alice Smith', 'alice@example.com'),
-('Bob Johnson', 'bob@example.com'),
-('Charlie Brown', 'charlie@example.com');
+INSERT INTO users (name, email, password_hash) VALUES
+('Alice Smith', 'alice@example.com', '$2b$12$EixZaYVK1fsbw1ZfbX3OXePaWxn96p36WQoeG6Lruj3vjPGga31lW'),
+('Bob Johnson', 'bob@example.com', '$2b$12$EixZaYVK1fsbw1ZfbX3OXePaWxn96p36WQoeG6Lruj3vjPGga31lW'),
+('Charlie Brown', 'charlie@example.com', '$2b$12$EixZaYVK1fsbw1ZfbX3OXePaWxn96p36WQoeG6Lruj3vjPGga31lW');
 
 -- Demo Wallets
 INSERT INTO wallets (user_id, balance) VALUES

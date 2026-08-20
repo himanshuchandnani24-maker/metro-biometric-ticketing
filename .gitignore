@@ -17,9 +17,18 @@ build/
 # Fingerprint dataset
 fingerprint-matcher/dataset/
 
+# Uploaded fingerprints (runtime data)
+backend/uploads/
+
 # IDE
 .vscode/
 
 # OS
 .DS_Store
 Thumbs.db
+
+# Nested repo (accidental clone)
+metro-biometric-ticketing/
+
+# IDE config
+pyrightconfig.json
