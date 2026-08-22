@@ -1,6 +1,8 @@
 import { Navigate, Route, Routes } from 'react-router-dom';
 import Navbar from './components/Navbar';
+import Footer from './components/Footer';
 import ProtectedRoute from './components/ProtectedRoute';
+import Home from './pages/Home';
 import Login from './pages/Login';
 import Register from './pages/Register';
 import Wallet from './pages/Wallet';
@@ -8,21 +10,17 @@ import EntryGate from './pages/EntryGate';
 import ExitGate from './pages/ExitGate';
 import TravelHistory from './pages/TravelHistory';
 import AdminDashboard from './pages/AdminDashboard';
-import { useAuth } from './auth/AuthContext';
 import './App.css';
-
-function HomeRedirect() {
-  const { isAuthenticated } = useAuth();
-  return <Navigate to={isAuthenticated ? '/wallet' : '/login'} replace />;
-}
 
 export default function App() {
   return (
     <div className="app-shell">
       <Navbar />
-      <main className="main-content">
+      <main className="main-content-wrapper">
         <Routes>
-          <Route path="/" element={<HomeRedirect />} />
+          <Route path="/" element={<Home />} />
+          <Route path="/home" element={<Home />} />
+          <Route path="/about" element={<Home />} />
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
           <Route
@@ -68,6 +66,7 @@ export default function App() {
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </main>
+      <Footer />
     </div>
   );
 }
