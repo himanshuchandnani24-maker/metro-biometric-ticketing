@@ -6,7 +6,7 @@ export default function Footer() {
   return (
     <footer className="footer-stitch">
       <div className="footer-container">
-        {/* Top Tier: Brand, Mission Vision & Network Status */}
+        {/* Top Tier: Brand, Mission & Quick Navigation */}
         <div className="footer-grid">
           {/* Brand & Vision */}
           <div className="footer-brand-col">
@@ -14,58 +14,54 @@ export default function Footer() {
               <BrandLogo size="md" layout="row" />
             </div>
             <p className="footer-vision-text">
-              Revolutionizing urban transit with secure, millisecond biometric authentication. 
-              Eliminating physical tickets and bottlenecks to power frictionless mobility for next-generation smart cities.
+              Cardless, millisecond biometric ticketing system built for high-velocity metro transit and automated distance fare management.
             </p>
             <div className="footer-status-badge">
               <span className="status-indicator-dot" />
-              <span className="status-indicator-text">Transit Network Online • 2026 Core Live</span>
+              <span className="status-indicator-text">Transit Network Online • 2026 Core</span>
             </div>
           </div>
 
-          {/* Quick Nav Links */}
+          {/* Real Working Page Links: Gate Simulator */}
           <div className="footer-links-col">
-            <h4>Transit System</h4>
+            <h4>Gate Simulator</h4>
             <ul>
-              <li><Link to="/wallet">Digital Wallet</Link></li>
-              <li><Link to="/entry">Entry Gate Simulator</Link></li>
-              <li><Link to="/exit">Exit Gate Simulator</Link></li>
-              <li><Link to="/history">Travel Logs</Link></li>
+              <li><Link to="/entry">Station Entry Gate</Link></li>
+              <li><Link to="/exit">Station Exit Gate</Link></li>
+              <li><Link to="/wallet">Digital Wallet &amp; Pass</Link></li>
             </ul>
           </div>
 
-          {/* Infrastructure & Security */}
+          {/* Real Working Page Links: Rider Account */}
           <div className="footer-links-col">
-            <h4>Technology & Privacy</h4>
+            <h4>Rider Services</h4>
             <ul>
-              <li><a href="#biometrics" onClick={(e) => e.preventDefault()}>Biometric Zero-Knowledge Proofs</a></li>
-              <li><a href="#security" onClick={(e) => e.preventDefault()}>Encrypted Edge Enclaves</a></li>
-              <li><a href="#fare" onClick={(e) => e.preventDefault()}>Smart Dynamic Fare Matrix</a></li>
-              <li><Link to="/admin">Admin Operations</Link></li>
+              <li><Link to="/history">Personal Travel Logs</Link></li>
+              <li><Link to="/admin">Admin Control Center</Link></li>
+              <li><Link to="/faq">Commuter Help &amp; FAQs</Link></li>
             </ul>
           </div>
 
-          {/* Legal & Standards */}
+          {/* Real Working Page Links: Account Auth */}
           <div className="footer-links-col">
-            <h4>Standards & Support</h4>
+            <h4>Account Access</h4>
             <ul>
-              <li><a href="#privacy" onClick={(e) => e.preventDefault()}>Privacy Policy</a></li>
-              <li><a href="#terms" onClick={(e) => e.preventDefault()}>Terms of Service</a></li>
-              <li><a href="#accessibility" onClick={(e) => e.preventDefault()}>A11y Accessibility</a></li>
-              <li><a href="#support" onClick={(e) => e.preventDefault()}>24/7 Transit Support</a></li>
+              <li><Link to="/login">Sign In to Account</Link></li>
+              <li><Link to="/register">Create New Account</Link></li>
+              <li><Link to="/">Home Overview</Link></li>
             </ul>
           </div>
         </div>
 
-        {/* Bottom Tier: Copyright & Meta */}
+        {/* Bottom Tier: Copyright */}
         <div className="footer-bottom-bar">
           <div className="footer-copyright">
-            © 2026 Angin Infrastructure Project. Designed for High-Velocity Commuters.
+            © 2026 Angin Biometric Transit Infrastructure.
           </div>
           <div className="footer-bottom-tags">
-            <span>Powered by Biometric Enclave Architecture</span>
+            <span>Cardless Biometric Mobility</span>
             <span className="footer-divider">•</span>
-            <span>Version 2.4.0 (2026 Edition)</span>
+            <span>Version 2.4.0</span>
           </div>
         </div>
       </div>

@@ -1,7 +1,7 @@
-import React from 'react';
 import { Link } from 'react-router-dom';
 import BrandLogo from '../components/BrandLogo';
 import AuthBackground from '../components/AuthBackground';
+import MetroMapCalculator from '../components/MetroMapCalculator';
 import { useAuth } from '../auth/AuthContext';
 
 export default function Home() {
@@ -9,7 +9,7 @@ export default function Home() {
 
   return (
     <div className="home-page-container">
-      {/* Interactive Background */}
+      {/* Interactive Parallax Background */}
       <AuthBackground />
 
       {/* Hero Section */}
@@ -38,17 +38,26 @@ export default function Home() {
                   <span>My Digital Wallet</span>
                 </Link>
                 <Link to="/entry" className="btn btn-secondary hero-btn">
-                  <span className="material-symbols-outlined">login</span>
-                  <span>Launch Gate Simulator</span>
+                  <span className="material-symbols-outlined">door_front</span>
+                  <span>Open Gate Simulator</span>
+                </Link>
+                <Link to="/admin" className="btn btn-secondary hero-btn">
+                  <span className="material-symbols-outlined">dashboard</span>
+                  <span>Admin Dashboard</span>
                 </Link>
               </>
             ) : (
               <>
-                <Link to="/register" className="btn btn-primary hero-btn">
-                  <span>Get Started Free</span>
-                  <span className="material-symbols-outlined">arrow_forward</span>
+                <Link to="/entry" className="btn btn-primary hero-btn">
+                  <span className="material-symbols-outlined">door_front</span>
+                  <span>Test Gate Simulator</span>
+                </Link>
+                <Link to="/register" className="btn btn-secondary hero-btn">
+                  <span className="material-symbols-outlined">person_add</span>
+                  <span>Create Account</span>
                 </Link>
                 <Link to="/login" className="btn btn-secondary hero-btn">
+                  <span className="material-symbols-outlined">login</span>
                   <span>Sign In</span>
                 </Link>
               </>
@@ -152,6 +161,19 @@ export default function Home() {
             </div>
           </div>
         </div>
+      </section>
+
+      {/* Interactive Transit Line Map & Route Fare Engine Section */}
+      <section className="network-map-section" id="network-map">
+        <div className="section-header">
+          <div className="section-badge">Live Transit Network</div>
+          <h2 className="section-title">Explore Stations &amp; Calculate Fares</h2>
+          <p className="section-subtitle">
+            Interact with the digital subway line map, inspect station platform congestion, and preview automated journey fare deductions.
+          </p>
+        </div>
+
+        <MetroMapCalculator />
       </section>
 
       {/* Core Capabilities Bento Grid */}
