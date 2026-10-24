@@ -14,6 +14,7 @@ export default function Register() {
   const [showPassword, setShowPassword] = useState(false);
   const [fingerprintFile, setFingerprintFile] = useState(null);
   const [pendingUser, setPendingUser] = useState(null);
+  const [pendingToken, setPendingToken] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
@@ -59,6 +60,7 @@ export default function Register() {
       }
 
       setPendingUser(loginRes.user);
+      setPendingToken(loginRes.token);
       setStep(2);
       setSuccess('Account created successfully. Please enroll your biometric fingerprint.');
     } catch (err) {
@@ -81,7 +83,7 @@ export default function Register() {
     setLoading(true);
     try {
       await registerFingerprint(pendingUser.id, fingerprintFile);
-      login(pendingUser);
+      login(pendingUser, pendingToken);
       setSuccess('Biometrics enrolled successfully. Navigating to wallet…');
       setTimeout(() => navigate('/wallet'), 700);
     } catch (err) {
@@ -93,7 +95,7 @@ export default function Register() {
 
   const handleSkipFingerprint = () => {
     if (!pendingUser) return;
-    login(pendingUser);
+    login(pendingUser, pendingToken);
     navigate('/wallet');
   };
 

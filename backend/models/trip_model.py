@@ -38,7 +38,7 @@ def enter_station(user_id, entry_station_id):
     except Exception as e:
         print(f"Error at entry: {e}")
         conn.rollback()
-        return {"success": False, "message": "Internal error during entry"}
+        return {"success": False, "message": f"Error during entry: {e}"}
     finally:
         conn.close()
 
@@ -71,24 +71,29 @@ def exit_station(user_id, exit_station_id):
         # Calculate fare
         fare_amount = get_fare_amount(entry_station_id, exit_station_id)
         if fare_amount is None:
-            conn.rollback()
-            return {"success": False, "message": "Fare not defined for this route"}
+            if entry_station_id == exit_station_id:
+                fare_amount = 5.00  # Default minimum fee for same-station entry & exit
+            else:
+                fare_amount = 10.00  # Fallback base fare if station pair not explicitly mapped
             
         # Check wallet
         balance = get_wallet_balance(user_id)
         if balance is None or float(balance) < float(fare_amount):
-            # Should theoretically not happen if max_fare check was done properly at entry,
-            # but maybe the user entered during a fare update.
-            cursor.execute(
-                "UPDATE trips SET status = 'FAILED', exit_station_id = %s, exit_time = NOW() WHERE id = %s",
-                (exit_station_id, trip_id)
-            )
+            curr_bal = float(balance) if balance is not None else 0.0
+            amount_needed = float(fare_amount) - curr_bal
             cursor.execute(
                 "INSERT INTO fraud_alerts (user_id, trip_id, reason) VALUES (%s, %s, %s)",
-                (user_id, trip_id, "Insufficient balance at exit")
+                (user_id, trip_id, "Insufficient balance at exit - gate payment required")
             )
             conn.commit()
-            return {"success": False, "message": "Insufficient balance at exit"}
+            return {
+                "success": False,
+                "insufficient_balance": True,
+                "amount_needed": amount_needed,
+                "fare_amount": float(fare_amount),
+                "current_balance": curr_bal,
+                "message": f"Insufficient balance. Journey fare is ₹{float(fare_amount):.2f}, but current balance is ₹{curr_bal:.2f}. Please pay ₹{amount_needed:.2f} at gate to exit."
+            }
             
         # Deduct fare and complete trip
         cursor.execute(
@@ -106,7 +111,7 @@ def exit_station(user_id, exit_station_id):
     except Exception as e:
         print(f"Error at exit: {e}")
         conn.rollback()
-        return {"success": False, "message": "Internal error during exit"}
+        return {"success": False, "message": f"Error during exit: {e}"}
     finally:
         conn.close()
 

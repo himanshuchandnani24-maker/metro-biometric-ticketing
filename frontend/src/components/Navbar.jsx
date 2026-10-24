@@ -11,7 +11,7 @@ export default function Navbar() {
   const handleLogout = () => {
     logout();
     setMenuOpen(false);
-    navigate('/login');
+    navigate('/', { state: { loggedOut: true } });
   };
 
   const closeMenu = () => setMenuOpen(false);
@@ -105,18 +105,20 @@ export default function Navbar() {
                 <span>History</span>
               </NavLink>
 
-              <NavLink
-                to="/admin"
-                className={({ isActive }) =>
-                  `nav-link-stitch ${isActive ? 'active' : ''}`
-                }
-                onClick={closeMenu}
-              >
-                <span className="material-symbols-outlined nav-item-icon">
-                  dashboard
-                </span>
-                <span>Admin</span>
-              </NavLink>
+              {user?.role === 'admin' && (
+                <NavLink
+                  to="/admin"
+                  className={({ isActive }) =>
+                    `nav-link-stitch ${isActive ? 'active' : ''}`
+                  }
+                  onClick={closeMenu}
+                >
+                  <span className="material-symbols-outlined nav-item-icon">
+                    dashboard
+                  </span>
+                  <span>Admin</span>
+                </NavLink>
+              )}
 
               {/* User Profile & Logout */}
               <div className="nav-user-stitch">
@@ -142,15 +144,6 @@ export default function Navbar() {
           ) : (
             <>
               <NavLink
-                to="/login"
-                className={({ isActive }) =>
-                  `nav-link-stitch ${isActive ? 'active' : ''}`
-                }
-                onClick={closeMenu}
-              >
-                Sign In
-              </NavLink>
-              <NavLink
                 to="/register"
                 className="btn btn-primary"
                 style={{ padding: '0.55rem 1.15rem', fontSize: '0.875rem' }}
@@ -158,6 +151,33 @@ export default function Navbar() {
               >
                 Get Started
               </NavLink>
+              <NavLink
+                to="/login"
+                className={({ isActive }) =>
+                  `nav-link-stitch ${isActive ? 'active' : ''}`
+                }
+                onClick={closeMenu}
+              >
+                Passenger Login
+              </NavLink>
+              <a
+                href="/#admin-portal"
+                className="nav-link-stitch nav-admin-quick-link"
+                onClick={(e) => {
+                  closeMenu();
+                  const el = document.getElementById('admin-login-box');
+                  if (el) {
+                    e.preventDefault();
+                    el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    el.querySelector('input')?.focus();
+                  } else {
+                    navigate('/?admin=1');
+                  }
+                }}
+              >
+                <span className="material-symbols-outlined nav-item-icon">admin_panel_settings</span>
+                <span>Admin Login</span>
+              </a>
             </>
           )}
         </div>

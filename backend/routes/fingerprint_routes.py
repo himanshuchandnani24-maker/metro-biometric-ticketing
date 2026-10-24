@@ -45,6 +45,24 @@ def register():
             return jsonify({"error": result['message']}), 404
         return jsonify({"error": result['message']}), 400
 
+@fingerprint_bp.route('/fingerprint/status/<int:user_id>', methods=['GET'])
+def get_status(user_id):
+    """Check if the user has already enrolled a biometric fingerprint."""
+    from db import get_db_connection
+    conn = get_db_connection()
+    if not conn:
+        return jsonify({"error": "Database error"}), 500
+    try:
+        cur = conn.cursor(dictionary=True)
+        cur.execute("SELECT id, created_at FROM fingerprint_templates WHERE user_id = %s", (user_id,))
+        row = cur.fetchone()
+        return jsonify({
+            "enrolled": bool(row),
+            "created_at": row['created_at'].isoformat() if row and row.get('created_at') else None
+        }), 200
+    finally:
+        conn.close()
+
 @fingerprint_bp.route('/fingerprint/verify', methods=['POST'])
 def verify():
     user_id, source = extract_input_and_user_id()

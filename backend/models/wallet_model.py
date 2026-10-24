@@ -18,8 +18,15 @@ def topup_wallet(user_id, amount):
     conn = get_db_connection()
     if not conn: return False
     try:
-        cursor = conn.cursor()
+        cursor = conn.cursor(dictionary=True)
         conn.start_transaction()
+
+        # Check user exists
+        cursor.execute("SELECT id FROM users WHERE id = %s", (user_id,))
+        if not cursor.fetchone():
+            print(f"Error topping up wallet: user_id {user_id} does not exist in users table")
+            conn.rollback()
+            return False
         
         # Record payment
         cursor.execute(
@@ -27,10 +34,12 @@ def topup_wallet(user_id, amount):
             (user_id, amount)
         )
         
-        # Update wallet balance
+        # Upsert wallet balance (handles both new and existing wallet rows)
         cursor.execute(
-            "UPDATE wallets SET balance = balance + %s WHERE user_id = %s",
-            (amount, user_id)
+            """INSERT INTO wallets (user_id, balance) 
+               VALUES (%s, %s) 
+               ON DUPLICATE KEY UPDATE balance = balance + VALUES(balance)""",
+            (user_id, amount)
         )
         
         conn.commit()

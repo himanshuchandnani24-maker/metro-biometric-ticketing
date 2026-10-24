@@ -34,8 +34,12 @@ export default function Login() {
         email: form.email.trim(),
         password: form.password,
       });
-      login(data.user);
-      navigate(from, { replace: true });
+      login(data.user, data.token);
+      if (data.user?.role === 'admin') {
+        navigate('/admin', { replace: true });
+      } else {
+        navigate(from, { replace: true });
+      }
     } catch (err) {
       setError(err.message || 'Login failed. Check your credentials.');
     } finally {
@@ -138,8 +142,16 @@ export default function Login() {
 
         {/* Footer Link */}
         <div className="auth-footer-nav">
-          <span>Don&apos;t have an account? </span>
-          <Link to="/register">Create an account</Link>
+          <div>
+            <span>Don&apos;t have an account? </span>
+            <Link to="/register">Create an account</Link>
+          </div>
+          <div style={{ marginTop: '0.75rem', fontSize: '0.875rem' }}>
+            <span>Metro Staff / Operations? </span>
+            <Link to="/?admin=1#admin-portal" style={{ fontWeight: 600 }}>
+              Admin Portal Login &rarr;
+            </Link>
+          </div>
         </div>
       </div>
     </div>

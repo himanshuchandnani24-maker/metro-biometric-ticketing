@@ -1,23 +1,28 @@
 const API_BASE = import.meta.env.VITE_API_URL || '/api';
 
 class ApiError extends Error {
-  constructor(message, status) {
+  constructor(message, status, data = {}) {
     super(message);
     this.name = 'ApiError';
     this.status = status;
+    this.data = data;
   }
 }
 
 async function parseResponse(response) {
   const data = await response.json().catch(() => ({}));
   if (!response.ok) {
-    throw new ApiError(data.error || data.message || 'Request failed', response.status);
+    throw new ApiError(data.error || data.message || 'Request failed', response.status, data);
   }
   return data;
 }
 
 async function request(path, options = {}) {
   const headers = { ...options.headers };
+  const token = localStorage.getItem('metro_token');
+  if (token && !headers['Authorization']) {
+    headers['Authorization'] = `Bearer ${token}`;
+  }
   if (options.body && !headers['Content-Type']) {
     headers['Content-Type'] = 'application/json';
   }
@@ -30,8 +35,15 @@ async function request(path, options = {}) {
 }
 
 async function multipartRequest(path, formData) {
+  const headers = {};
+  const token = localStorage.getItem('metro_token');
+  if (token) {
+    headers['Authorization'] = `Bearer ${token}`;
+  }
+
   const response = await fetch(`${API_BASE}${path}`, {
     method: 'POST',
+    headers,
     body: formData,
   });
   return parseResponse(response);
@@ -55,6 +67,28 @@ export async function getWalletBalance(userId) {
   return request(`/wallet/${userId}`);
 }
 
+export async function getWalletConfig() {
+  return request('/wallet/config');
+}
+
+export async function createWalletOrder(userId, amount) {
+  return request('/wallet/create-order', {
+    method: 'POST',
+    body: JSON.stringify({ user_id: userId, amount }),
+  });
+}
+
+export async function verifyWalletPayment(paymentData) {
+  return request('/wallet/verify-payment', {
+    method: 'POST',
+    body: JSON.stringify(paymentData),
+  });
+}
+
+export async function getWalletPayments(userId) {
+  return request(`/wallet/payments/${userId}`);
+}
+
 export async function topupWallet(userId, amount) {
   return request('/wallet/topup', {
     method: 'POST',
@@ -67,6 +101,10 @@ export async function registerFingerprint(userId, file) {
   formData.append('user_id', String(userId));
   formData.append('fingerprint', file);
   return multipartRequest('/fingerprint/register', formData);
+}
+
+export async function getFingerprintStatus(userId) {
+  return request(`/fingerprint/status/${userId}`);
 }
 
 export async function verifyFingerprint(userId, file) {

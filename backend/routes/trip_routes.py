@@ -111,7 +111,14 @@ def exit():
             "fare_charged": float(result['fare_charged'])
         }), 200
     else:
-        return jsonify({"error": result['message']}), 400
+        status_code = 402 if result.get('insufficient_balance') else 400
+        return jsonify({
+            "error": result['message'],
+            "insufficient_balance": result.get('insufficient_balance', False),
+            "amount_needed": float(result['amount_needed']) if 'amount_needed' in result else None,
+            "fare_amount": float(result['fare_amount']) if 'fare_amount' in result else None,
+            "current_balance": float(result['current_balance']) if 'current_balance' in result else None
+        }), status_code
 
 @trip_bp.route('/trip/history/<int:user_id>', methods=['GET'])
 def history(user_id):

@@ -2,10 +2,11 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 import BrandLogo from '../components/BrandLogo';
 import AuthBackground from '../components/AuthBackground';
+import AdminLoginBox from '../components/AdminLoginBox';
 import { useAuth } from '../auth/AuthContext';
 
 export default function Home() {
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, isAdmin } = useAuth();
 
   return (
     <div className="home-page-container">
@@ -45,12 +46,23 @@ export default function Home() {
             ) : (
               <>
                 <Link to="/register" className="btn btn-primary hero-btn">
-                  <span>Get Started Free</span>
+                  <span>Get Started</span>
                   <span className="material-symbols-outlined">arrow_forward</span>
                 </Link>
                 <Link to="/login" className="btn btn-secondary hero-btn">
-                  <span>Sign In</span>
+                  <span>Passenger Login</span>
                 </Link>
+                <a
+                  href="#admin-login-box"
+                  className="btn btn-secondary hero-btn"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    document.getElementById('admin-login-box')?.scrollIntoView({ behavior: 'smooth' });
+                  }}
+                >
+                  <span className="material-symbols-outlined">admin_panel_settings</span>
+                  <span>Admin Login</span>
+                </a>
               </>
             )}
           </div>
@@ -77,6 +89,13 @@ export default function Home() {
               <span className="metric-desc">Fraud Defense</span>
             </div>
           </div>
+        </div>
+      </section>
+
+      {/* Dedicated Admin Login Section on Landing Page */}
+      <section className="admin-login-section" id="admin-portal">
+        <div className="admin-login-container">
+          <AdminLoginBox />
         </div>
       </section>
 
@@ -378,10 +397,29 @@ export default function Home() {
               <span className="material-symbols-outlined">login</span>
               <span>Test Entry Gate</span>
             </Link>
-            <Link to="/admin" className="btn btn-secondary" style={{ padding: '0.85rem 1.85rem' }}>
-              <span className="material-symbols-outlined">dashboard</span>
-              <span>Admin Center</span>
-            </Link>
+            {isAdmin ? (
+              <Link to="/admin" className="btn btn-secondary" style={{ padding: '0.85rem 1.85rem' }}>
+                <span className="material-symbols-outlined">dashboard</span>
+                <span>Admin Center</span>
+              </Link>
+            ) : (
+              <a
+                href="#admin-login-box"
+                className="btn btn-secondary"
+                style={{ padding: '0.85rem 1.85rem' }}
+                onClick={(e) => {
+                  e.preventDefault();
+                  const el = document.getElementById('admin-login-box');
+                  if (el) {
+                    el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    el.querySelector('input')?.focus();
+                  }
+                }}
+              >
+                <span className="material-symbols-outlined">admin_panel_settings</span>
+                <span>Admin Login Portal</span>
+              </a>
+            )}
           </div>
         </div>
       </section>

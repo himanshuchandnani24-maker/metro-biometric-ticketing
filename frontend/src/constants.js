@@ -1,8 +1,10 @@
 export const STATIONS = [
-  { id: 1, name: 'Central Station' },
-  { id: 2, name: 'North Park' },
-  { id: 3, name: 'South Side' },
-  { id: 4, name: 'East End' },
+  { id: 1, name: 'APMC' },
+  { id: 2, name: 'Old High Court' },
+  { id: 3, name: 'Kalupur Railway Station' },
+  { id: 4, name: 'Motera Stadium' },
+  { id: 5, name: 'GNLU (Gandhinagar)' },
+  { id: 6, name: 'Infocity (Gandhinagar)' },
 ];
 
 export const MIN_WALLET_BALANCE = 5.0;

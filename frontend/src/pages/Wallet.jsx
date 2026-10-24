@@ -1,8 +1,17 @@
 import { useCallback, useEffect, useState } from 'react';
-import { getWalletBalance, registerFingerprint, topupWallet, verifyFingerprint } from '../api/api';
+import {
+  createWalletOrder,
+  getWalletBalance,
+  getWalletPayments,
+  registerFingerprint,
+  topupWallet,
+  verifyFingerprint,
+  verifyWalletPayment,
+} from '../api/api';
 import { useAuth } from '../auth/AuthContext';
 import FingerprintPicker from '../components/FingerprintPicker';
-import { formatCurrency, MIN_WALLET_BALANCE } from '../constants';
+import RazorpayModal from '../components/RazorpayModal';
+import { formatCurrency, formatDateTime, MIN_WALLET_BALANCE } from '../constants';
 
 export default function Wallet() {
   const { user } = useAuth();
@@ -10,10 +19,14 @@ export default function Wallet() {
   const [amount, setAmount] = useState('');
   const [loading, setLoading] = useState(true);
   const [topupLoading, setTopupLoading] = useState(false);
+  const [payments, setPayments] = useState([]);
+  const [paymentsLoading, setPaymentsLoading] = useState(false);
   const [fingerprintFile, setFingerprintFile] = useState(null);
   const [fingerprintLoading, setFingerprintLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
+  const [showRazorpayModal, setShowRazorpayModal] = useState(false);
+  const [modalOrderData, setModalOrderData] = useState(null);
 
   const fetchBalance = useCallback(async ({ silent = false } = {}) => {
     if (!silent) setLoading(true);
@@ -28,12 +41,26 @@ export default function Wallet() {
     }
   }, [user.id]);
 
+  const fetchPayments = useCallback(async () => {
+    setPaymentsLoading(true);
+    try {
+      const data = await getWalletPayments(user.id);
+      setPayments(data.payments || []);
+    } catch (err) {
+      console.warn('Could not load payment history:', err);
+    } finally {
+      setPaymentsLoading(false);
+    }
+  }, [user.id]);
+
   useEffect(() => {
     fetchBalance();
-  }, [fetchBalance]);
+    fetchPayments();
+  }, [fetchBalance, fetchPayments]);
 
-  const handleTopup = async (event) => {
-    event.preventDefault();
+  // Razorpay Checkout Flow
+  const handleRazorpayTopup = async (event) => {
+    if (event) event.preventDefault();
     setError('');
     setSuccess('');
 
@@ -44,13 +71,99 @@ export default function Wallet() {
     }
 
     setTopupLoading(true);
+
     try {
-      await topupWallet(user.id, value);
-      setSuccess(`Successfully added ${formatCurrency(value)} to your Angin transit wallet.`);
+      // 1. Create order on backend
+      const orderData = await createWalletOrder(user.id, value);
+
+      // 2. If using test/demo keys, simulated order, or offline, open realistic Test Mode Simulator!
+      const isDemoKey = !orderData.key_id || orderData.key_id.startsWith('rzp_test_metroDemo');
+      const isSimulated = orderData.is_simulated || isDemoKey || !orderData.order_id || orderData.order_id.startsWith('order_test_');
+
+      if (isSimulated || typeof window.Razorpay !== 'function') {
+        setModalOrderData(orderData);
+        setShowRazorpayModal(true);
+        setTopupLoading(false);
+        return;
+      }
+
+      // 3. Launch Razorpay Test Checkout modal
+      const options = {
+        key: orderData.key_id || 'rzp_test_metroDemoKey',
+        amount: orderData.amount_paise || Math.round(value * 100),
+        currency: orderData.currency || 'INR',
+        name: 'Angin Metro Transit',
+        description: `Wallet Recharge for Rider #${user.id} (${user.name})`,
+        image: '/angin-logo.png',
+        order_id: orderData.order_id,
+        handler: async function (response) {
+          try {
+            setTopupLoading(true);
+            await verifyWalletPayment({
+              user_id: user.id,
+              amount: value,
+              razorpay_order_id: response.razorpay_order_id || orderData.order_id,
+              razorpay_payment_id: response.razorpay_payment_id || `pay_${Date.now()}`,
+              razorpay_signature: response.razorpay_signature || 'simulated_test_sig',
+            });
+            setSuccess(`Payment Successful! Added ${formatCurrency(value)} to your Angin biometric wallet.`);
+            setAmount('');
+            await fetchBalance({ silent: true });
+            await fetchPayments();
+          } catch (verifyErr) {
+            setError(verifyErr.message || 'Payment verification failed.');
+          } finally {
+            setTopupLoading(false);
+          }
+        },
+        prefill: {
+          name: user.name || 'Metro Rider',
+          email: user.email || 'rider@metro.local',
+          contact: '9876543210',
+        },
+        notes: {
+          rider_id: String(user.id),
+          service: 'Biometric Transit Balance Recharge',
+        },
+        theme: {
+          color: '#006699',
+        },
+        modal: {
+          ondismiss: function () {
+            setTopupLoading(false);
+          },
+        },
+      };
+
+      const rzpInstance = new window.Razorpay(options);
+      rzpInstance.on('payment.failed', function (resp) {
+        setError(`Payment failed: ${resp.error?.description || 'Transaction declined'}`);
+        setTopupLoading(false);
+      });
+      rzpInstance.open();
+    } catch (err) {
+      setError(err.message || 'Failed to initiate Razorpay checkout.');
+      setTopupLoading(false);
+    }
+  };
+
+  const handleSimulatorSuccess = async (simulatedResponse) => {
+    if (!modalOrderData) return;
+    setTopupLoading(true);
+    try {
+      await verifyWalletPayment({
+        user_id: user.id,
+        amount: modalOrderData.amount,
+        razorpay_order_id: simulatedResponse.razorpay_order_id,
+        razorpay_payment_id: simulatedResponse.razorpay_payment_id,
+        razorpay_signature: simulatedResponse.razorpay_signature,
+      });
+      setSuccess(`Payment Successful! Added ${formatCurrency(modalOrderData.amount)} to your Angin biometric wallet.`);
       setAmount('');
       await fetchBalance({ silent: true });
-    } catch (err) {
-      setError(err.message || 'Wallet top-up failed.');
+      await fetchPayments();
+    } catch (verifyErr) {
+      setError(verifyErr.message || 'Payment verification failed.');
     } finally {
       setTopupLoading(false);
     }
@@ -147,19 +260,24 @@ export default function Wallet() {
       {/* Top-up and Quick Recharge Cards */}
       <div className="card-grid cols-2" style={{ marginTop: '1.5rem' }}>
         <div className="card glass-panel interactive-card">
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '1rem' }}>
-            <span className="material-symbols-outlined text-primary" style={{ fontSize: '24px' }}>add_card</span>
-            <h2 style={{ margin: 0, fontSize: '1.15rem' }}>Recharge Wallet</h2>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1rem' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+              <span className="material-symbols-outlined text-primary" style={{ fontSize: '24px' }}>payments</span>
+              <h2 style={{ margin: 0, fontSize: '1.15rem' }}>Recharge via Razorpay</h2>
+            </div>
+            <span className="status-badge status-in_progress" style={{ fontSize: '0.75rem', fontWeight: 600 }}>
+              Test Mode
+            </span>
           </div>
           <p style={{ margin: '0 0 1.25rem', fontSize: '0.875rem', color: 'var(--color-on-surface-variant)' }}>
-            Instantly add funds to your biometric transit balance via direct test payment.
+            Add funds using credit/debit card, UPI, or netbanking via Razorpay Test Gateway.
           </p>
 
-          <form onSubmit={handleTopup}>
+          <form onSubmit={handleRazorpayTopup}>
             <div className="form-group">
               <label htmlFor="amount">Recharge Amount (INR)</label>
               <div className="input-with-icon">
-                <span className="material-symbols-outlined input-icon-lead">payments</span>
+                <span className="material-symbols-outlined input-icon-lead">currency_rupee</span>
                 <input
                   id="amount"
                   type="number"
@@ -172,10 +290,18 @@ export default function Wallet() {
                 />
               </div>
             </div>
-            <button type="submit" className="btn btn-primary btn-block" disabled={topupLoading} style={{ height: '46px' }}>
-              {topupLoading ? <span className="loading-spinner" /> : (
+            <button
+              type="submit"
+              className="btn btn-primary btn-block"
+              disabled={topupLoading}
+              style={{ height: '46px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem' }}
+            >
+              {topupLoading ? (
+                <span className="loading-spinner" />
+              ) : (
                 <>
-                  <span>Add Funds to Wallet</span>
+                  <span className="material-symbols-outlined">lock_open</span>
+                  <span>Pay with Razorpay</span>
                   <span className="material-symbols-outlined">arrow_forward</span>
                 </>
               )}
@@ -205,6 +331,73 @@ export default function Wallet() {
             ))}
           </div>
         </div>
+      </div>
+
+      {/* Payment & Recharge History Table */}
+      <div className="card glass-panel" style={{ marginTop: '1.5rem' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+            <span className="material-symbols-outlined text-primary">receipt_long</span>
+            <h2 style={{ margin: 0, fontSize: '1.15rem' }}>Recharge &amp; Payment History</h2>
+          </div>
+          <button
+            type="button"
+            className="btn btn-secondary"
+            onClick={fetchPayments}
+            disabled={paymentsLoading}
+            style={{ padding: '0.35rem 0.75rem', fontSize: '0.8125rem' }}
+          >
+            <span className="material-symbols-outlined" style={{ fontSize: '15px' }}>refresh</span>
+            <span>Refresh</span>
+          </button>
+        </div>
+
+        {paymentsLoading ? (
+          <div className="empty-state">
+            <span className="loading-spinner dark" style={{ width: '1.5rem', height: '1.5rem', marginBottom: '0.5rem' }} />
+            <p>Loading payment ledger…</p>
+          </div>
+        ) : payments.length === 0 ? (
+          <div className="empty-state">
+            <span className="material-symbols-outlined text-outline" style={{ fontSize: '36px', marginBottom: '0.5rem' }}>
+              credit_card_off
+            </span>
+            <p>No recharge payments recorded yet. Top up your wallet to view payment logs.</p>
+          </div>
+        ) : (
+          <div className="table-wrap">
+            <table className="data-table">
+              <thead>
+                <tr>
+                  <th>Transaction ID</th>
+                  <th>Date &amp; Time</th>
+                  <th>Amount Credited</th>
+                  <th>Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                {payments.map((p) => (
+                  <tr key={p.id}>
+                    <td style={{ fontWeight: 600, fontFamily: 'monospace' }}>
+                      TXN-{p.id}
+                    </td>
+                    <td style={{ fontSize: '0.85rem' }}>
+                      {p.created_at ? formatDateTime(p.created_at) : 'Just now'}
+                    </td>
+                    <td style={{ fontWeight: 700, color: 'var(--color-primary)' }}>
+                      +{formatCurrency(p.amount)}
+                    </td>
+                    <td>
+                      <span className={`status-badge status-${(p.status || 'success').toLowerCase()}`}>
+                        {p.status || 'SUCCESS'}
+                      </span>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
       </div>
 
       {/* Biometric Enrollment Card */}
@@ -248,6 +441,15 @@ export default function Wallet() {
           </button>
         </div>
       </div>
+
+      <RazorpayModal
+        isOpen={showRazorpayModal}
+        onClose={() => setShowRazorpayModal(false)}
+        amount={modalOrderData?.amount || 0}
+        description={`Wallet Top-up for Rider #${user?.id}`}
+        onSuccess={handleSimulatorSuccess}
+        onFailure={(msg) => setError(msg)}
+      />
     </div>
   );
 }

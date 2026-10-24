@@ -6,28 +6,43 @@ unrealistically fast travel between stations.
 from datetime import datetime
 
 
-# Simple station-distance lookup (travel time in minutes between stations).
-# In a real system this would come from a database.  Here we keep a small
-# hard-coded table for demonstration.
+# Travel times in minutes between Ahmedabad & Gandhinagar metro stations:
+# S1: APMC, S2: Old High Court, S3: Kalupur, S4: Motera Stadium, S5: GNLU, S6: Infocity
 STATION_TRAVEL_TIMES = {
-    ("S1", "S2"): 5,
-    ("S1", "S3"): 12,
-    ("S1", "S4"): 20,
-    ("S2", "S3"): 7,
-    ("S2", "S4"): 15,
-    ("S3", "S4"): 8,
+    ("S1", "S2"): 10,
+    ("S1", "S3"): 15,
+    ("S1", "S4"): 22,
+    ("S1", "S5"): 35,
+    ("S1", "S6"): 45,
+    ("S2", "S3"): 8,
+    ("S2", "S4"): 14,
+    ("S2", "S5"): 27,
+    ("S2", "S6"): 38,
+    ("S3", "S4"): 15,
+    ("S3", "S5"): 28,
+    ("S3", "S6"): 40,
+    ("S4", "S5"): 16,
+    ("S4", "S6"): 25,
+    ("S5", "S6"): 10,
 }
 
 
-def _get_min_travel_time(station_a: str, station_b: str) -> int:
+def _normalize_station_key(st) -> str:
+    s = str(st).strip()
+    return f"S{s}" if s.isdigit() else s
+
+
+def _get_min_travel_time(station_a, station_b) -> int:
     """Return the minimum travel time (minutes) between two stations.
 
     The lookup is symmetric — ``(A, B)`` and ``(B, A)`` give the same result.
     If the pair is not in the table, a generous default of 3 minutes is used.
     """
-    if station_a == station_b:
+    sa = _normalize_station_key(station_a)
+    sb = _normalize_station_key(station_b)
+    if sa == sb:
         return 0
-    key = tuple(sorted([station_a, station_b]))
+    key = tuple(sorted([sa, sb]))
     return STATION_TRAVEL_TIMES.get(key, 3)
 
 
