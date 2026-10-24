@@ -2,28 +2,83 @@ import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { STATIONS, formatCurrency } from '../constants';
 
-// Realistic fare and travel time matrix based on station distances
+// Realistic fare and travel time matrix based on GMRC station distances
 const ROUTE_DATA = {
-  '1-2': { fare: 2.50, time: 5, stops: 1, dist: '3.2 km', line: 'Cyan Express' },
-  '1-3': { fare: 3.00, time: 9, stops: 2, dist: '6.8 km', line: 'Blue Metro Line' },
-  '1-4': { fare: 4.00, time: 14, stops: 3, dist: '11.5 km', line: 'Direct Express' },
-  '2-1': { fare: 2.50, time: 5, stops: 1, dist: '3.2 km', line: 'Cyan Express' },
-  '2-3': { fare: 3.50, time: 8, stops: 1, dist: '5.4 km', line: 'Cross-City Link' },
-  '2-4': { fare: 5.00, time: 16, stops: 2, dist: '13.1 km', line: 'Perimeter Line' },
-  '3-1': { fare: 3.00, time: 9, stops: 2, dist: '6.8 km', line: 'Blue Metro Line' },
-  '3-2': { fare: 3.50, time: 8, stops: 1, dist: '5.4 km', line: 'Cross-City Link' },
-  '3-4': { fare: 2.00, time: 4, stops: 1, dist: '2.9 km', line: 'East Shuttle' },
-  '4-1': { fare: 4.00, time: 14, stops: 3, dist: '11.5 km', line: 'Direct Express' },
-  '4-2': { fare: 5.00, time: 16, stops: 2, dist: '13.1 km', line: 'Perimeter Line' },
-  '4-3': { fare: 2.00, time: 4, stops: 1, dist: '2.9 km', line: 'East Shuttle' },
+  '1-1': { fare: 5.00, time: 2, stops: 0, dist: '0.0 km', line: 'Same Station' },
+  '1-2': { fare: 10.00, time: 5, stops: 1, dist: '3.2 km', line: 'Cyan Express' },
+  '1-3': { fare: 15.00, time: 9, stops: 2, dist: '6.8 km', line: 'Blue Metro Line' },
+  '1-4': { fare: 20.00, time: 14, stops: 3, dist: '11.5 km', line: 'Direct Express' },
+  '1-5': { fare: 25.00, time: 19, stops: 4, dist: '16.2 km', line: 'North Corridor' },
+  '1-6': { fare: 30.00, time: 24, stops: 5, dist: '21.0 km', line: 'Gandhinagar Ext.' },
+  '2-1': { fare: 10.00, time: 5, stops: 1, dist: '3.2 km', line: 'Cyan Express' },
+  '2-2': { fare: 5.00, time: 2, stops: 0, dist: '0.0 km', line: 'Same Station' },
+  '2-3': { fare: 10.00, time: 5, stops: 1, dist: '3.6 km', line: 'Cross-City Link' },
+  '2-4': { fare: 15.00, time: 10, stops: 2, dist: '8.3 km', line: 'Stadium Route' },
+  '2-5': { fare: 20.00, time: 15, stops: 3, dist: '13.0 km', line: 'Capital Link' },
+  '2-6': { fare: 25.00, time: 20, stops: 4, dist: '17.8 km', line: 'Gandhinagar Ext.' },
+  '3-1': { fare: 15.00, time: 9, stops: 2, dist: '6.8 km', line: 'Blue Metro Line' },
+  '3-2': { fare: 10.00, time: 5, stops: 1, dist: '3.6 km', line: 'Cross-City Link' },
+  '3-3': { fare: 5.00, time: 2, stops: 0, dist: '0.0 km', line: 'Same Station' },
+  '3-4': { fare: 10.00, time: 6, stops: 1, dist: '4.7 km', line: 'Direct Shuttle' },
+  '3-5': { fare: 15.00, time: 11, stops: 2, dist: '9.4 km', line: 'North Link' },
+  '3-6': { fare: 20.00, time: 16, stops: 3, dist: '14.2 km', line: 'Capital Express' },
+  '4-1': { fare: 20.00, time: 14, stops: 3, dist: '11.5 km', line: 'Direct Express' },
+  '4-2': { fare: 15.00, time: 10, stops: 2, dist: '8.3 km', line: 'Stadium Route' },
+  '4-3': { fare: 10.00, time: 6, stops: 1, dist: '4.7 km', line: 'Direct Shuttle' },
+  '4-4': { fare: 5.00, time: 2, stops: 0, dist: '0.0 km', line: 'Same Station' },
+  '4-5': { fare: 10.00, time: 5, stops: 1, dist: '4.7 km', line: 'GNLU Shuttle' },
+  '4-6': { fare: 15.00, time: 10, stops: 2, dist: '9.5 km', line: 'Tech Corridor' },
+  '5-1': { fare: 25.00, time: 19, stops: 4, dist: '16.2 km', line: 'North Corridor' },
+  '5-2': { fare: 20.00, time: 15, stops: 3, dist: '13.0 km', line: 'Capital Link' },
+  '5-3': { fare: 15.00, time: 11, stops: 2, dist: '9.4 km', line: 'North Link' },
+  '5-4': { fare: 10.00, time: 5, stops: 1, dist: '4.7 km', line: 'GNLU Shuttle' },
+  '5-5': { fare: 5.00, time: 2, stops: 0, dist: '0.0 km', line: 'Same Station' },
+  '5-6': { fare: 10.00, time: 5, stops: 1, dist: '4.8 km', line: 'Infocity Link' },
+  '6-1': { fare: 30.00, time: 24, stops: 5, dist: '21.0 km', line: 'Gandhinagar Ext.' },
+  '6-2': { fare: 25.00, time: 20, stops: 4, dist: '17.8 km', line: 'Gandhinagar Ext.' },
+  '6-3': { fare: 20.00, time: 16, stops: 3, dist: '14.2 km', line: 'Capital Express' },
+  '6-4': { fare: 15.00, time: 10, stops: 2, dist: '9.5 km', line: 'Tech Corridor' },
+  '6-5': { fare: 10.00, time: 5, stops: 1, dist: '4.8 km', line: 'Infocity Link' },
+  '6-6': { fare: 5.00, time: 2, stops: 0, dist: '0.0 km', line: 'Same Station' },
 };
 
 const STATION_META = {
-  1: { code: 'CEN', type: 'Grand Central Terminal', status: 'Optimal Flow', crowd: '24% Load', icon: 'hub' },
-  2: { code: 'NPK', type: 'Tech District Hub', status: 'On-Time', crowd: '48% Load', icon: 'apartment' },
-  3: { code: 'SSD', type: 'Commercial Interchange', status: 'Moderate Flow', crowd: '62% Load', icon: 'storefront' },
-  4: { code: 'EED', type: 'East Bay Residential', status: 'Light Traffic', crowd: '18% Load', icon: 'nature_people' },
+  1: { code: 'APMC', type: 'South Terminal', status: 'Optimal Flow', crowd: '24% Load', icon: 'hub' },
+  2: { code: 'OHC', type: 'Interchange Hub', status: 'On-Time', crowd: '48% Load', icon: 'apartment' },
+  3: { code: 'KLP', type: 'Railway Junction', status: 'Moderate Flow', crowd: '62% Load', icon: 'train' },
+  4: { code: 'MTR', type: 'Stadium Complex', status: 'Light Traffic', crowd: '18% Load', icon: 'stadium' },
+  5: { code: 'GNU', type: 'University Campus', status: 'On-Time', crowd: '22% Load', icon: 'school' },
+  6: { code: 'INF', type: 'IT Corridor', status: 'Moderate Flow', crowd: '35% Load', icon: 'computer' },
 };
+
+function getMeta(id) {
+  return (
+    STATION_META[id] || {
+      code: `S#${id}`,
+      type: 'Transit Stop',
+      status: 'Operational',
+      crowd: '20% Load',
+      icon: 'train',
+    }
+  );
+}
+
+function getRouteData(originId, destId) {
+  if (originId === destId) {
+    return { fare: 5.00, time: 2, stops: 0, dist: '0.0 km', line: 'Same Station (Min Token)' };
+  }
+  const key = `${originId}-${destId}`;
+  if (ROUTE_DATA[key]) return ROUTE_DATA[key];
+
+  const diff = Math.abs(originId - destId);
+  return {
+    fare: 5.00 + diff * 5.00,
+    time: diff * 4,
+    stops: diff,
+    dist: `${(diff * 3.5).toFixed(1)} km`,
+    line: 'Angin Metro Network',
+  };
+}
 
 export default function MetroMapCalculator() {
   const [originId, setOriginId] = useState(1);
@@ -31,8 +86,14 @@ export default function MetroMapCalculator() {
   const [activeTab, setActiveTab] = useState('calculator'); // 'calculator' | 'lines'
 
   const isSameStation = originId === destId;
-  const routeKey = `${originId}-${destId}`;
-  const routeInfo = ROUTE_DATA[routeKey] || { fare: 2.00, time: 3, stops: 0, dist: '0.0 km', line: 'Local Loop' };
+  const routeInfo = getRouteData(originId, destId);
+
+  const numStations = STATIONS.length || 6;
+  const getStationX = (idx) => 70 + idx * ((960 - 140) / Math.max(numStations - 1, 1));
+  const getStationXById = (id) => {
+    const idx = STATIONS.findIndex((s) => s.id === Number(id));
+    return idx >= 0 ? getStationX(idx) : 70;
+  };
 
   const handleSwapStations = () => {
     const temp = originId;
@@ -42,16 +103,13 @@ export default function MetroMapCalculator() {
 
   const handleStationNodeClick = (stationId) => {
     if (originId === stationId) {
-      // do nothing or cycle
       return;
     }
-    if (originId && !destId) {
-      setDestId(stationId);
-    } else {
-      // set as destination if different from origin
-      setDestId(stationId);
-    }
+    setDestId(stationId);
   };
+
+  const minId = Math.min(originId, destId);
+  const maxId = Math.max(originId, destId);
 
   return (
     <div className="metro-map-calculator-container glass-panel">
@@ -102,7 +160,7 @@ export default function MetroMapCalculator() {
 
           {/* Interactive SVG Transit Line Map */}
           <div className="interactive-svg-track-wrapper">
-            <svg viewBox="0 0 700 240" className="transit-map-svg" preserveAspectRatio="xMidYMid meet">
+            <svg viewBox="0 0 960 240" className="transit-map-svg" preserveAspectRatio="xMidYMid meet">
               <defs>
                 {/* Active Path Gradient */}
                 <linearGradient id="activeRouteGrad" x1="0%" y1="0%" x2="100%" y2="0%">
@@ -121,14 +179,30 @@ export default function MetroMapCalculator() {
               </defs>
 
               {/* Background Inactive Track Grid */}
-              <line x1="80" y1="120" x2="620" y2="120" stroke="#d8dadc" strokeWidth="8" strokeLinecap="round" />
-              <line x1="80" y1="120" x2="620" y2="120" stroke="#eceef0" strokeWidth="4" strokeDasharray="6 6" />
+              <line
+                x1={getStationX(0)}
+                y1="120"
+                x2={getStationX(numStations - 1)}
+                y2="120"
+                stroke="#d8dadc"
+                strokeWidth="8"
+                strokeLinecap="round"
+              />
+              <line
+                x1={getStationX(0)}
+                y1="120"
+                x2={getStationX(numStations - 1)}
+                y2="120"
+                stroke="#eceef0"
+                strokeWidth="4"
+                strokeDasharray="6 6"
+              />
 
               {/* Active Path Line Segment */}
               <line
-                x1={80 + (Math.min(originId, destId) - 1) * 180}
+                x1={getStationXById(minId)}
                 y1="120"
-                x2={80 + (Math.max(originId, destId) - 1) * 180}
+                x2={getStationXById(maxId)}
                 y2="120"
                 stroke="url(#activeRouteGrad)"
                 strokeWidth="8"
@@ -142,8 +216,8 @@ export default function MetroMapCalculator() {
                 <circle r="7" fill="#00f4fe" stroke="#ffffff" strokeWidth="2.5" filter="url(#nodeGlow)">
                   <animate
                     attributeName="cx"
-                    from={80 + (originId - 1) * 180}
-                    to={80 + (destId - 1) * 180}
+                    from={getStationXById(originId)}
+                    to={getStationXById(destId)}
                     dur="3s"
                     repeatCount="indefinite"
                   />
@@ -153,11 +227,11 @@ export default function MetroMapCalculator() {
 
               {/* Interactive Station Nodes */}
               {STATIONS.map((station, idx) => {
-                const cx = 80 + idx * 180;
+                const cx = getStationX(idx);
                 const isOrigin = station.id === originId;
                 const isDest = station.id === destId;
-                const isInPath =
-                  (station.id >= Math.min(originId, destId) && station.id <= Math.max(originId, destId));
+                const isInPath = station.id >= minId && station.id <= maxId;
+                const meta = getMeta(station.id);
 
                 return (
                   <g
@@ -231,10 +305,10 @@ export default function MetroMapCalculator() {
                       textAnchor="middle"
                       className="svg-station-name"
                       fontWeight="700"
-                      fontSize="13"
+                      fontSize="12"
                       fill={isOrigin || isDest ? '#001e40' : '#43474f'}
                     >
-                      {station.name}
+                      {station.name.split(' ')[0]}
                     </text>
 
                     {/* Station Status Subtitle */}
@@ -242,18 +316,18 @@ export default function MetroMapCalculator() {
                       x={cx}
                       y="94"
                       textAnchor="middle"
-                      fontSize="10.5"
+                      fontSize="10"
                       fill={isOrigin ? '#001e40' : isDest ? '#00696e' : '#737780'}
                       fontWeight="600"
                     >
-                      {isOrigin ? 'Origin Station' : isDest ? 'Destination' : STATION_META[station.id].code}
+                      {isOrigin ? 'Origin' : isDest ? 'Destination' : meta.code}
                     </text>
 
                     {/* Live Crowd Tag Bottom */}
                     <rect
-                      x={cx - 38}
+                      x={cx - 36}
                       y="155"
-                      width="76"
+                      width="72"
                       height="22"
                       rx="11"
                       fill={isOrigin || isDest ? '#d5e3ff' : '#eceef0'}
@@ -262,11 +336,11 @@ export default function MetroMapCalculator() {
                       x={cx}
                       y="170"
                       textAnchor="middle"
-                      fontSize="10"
+                      fontSize="9.5"
                       fontWeight="700"
                       fill={isOrigin || isDest ? '#001b3c' : '#5c6b7a'}
                     >
-                      {STATION_META[station.id].crowd}
+                      {meta.crowd}
                     </text>
                   </g>
                 );
@@ -277,7 +351,7 @@ export default function MetroMapCalculator() {
           {/* Station Quick Meta Cards */}
           <div className="station-meta-cards-row">
             {STATIONS.map((station) => {
-              const meta = STATION_META[station.id];
+              const meta = getMeta(station.id);
               const isSelected = station.id === originId || station.id === destId;
               return (
                 <div
@@ -364,76 +438,70 @@ export default function MetroMapCalculator() {
             </div>
           </div>
 
-          {/* Fare Calculation Display Box */}
-          <div className="calc-result-card">
-            {isSameStation ? (
-              <div className="same-station-alert">
-                <span className="material-symbols-outlined text-warning" style={{ fontSize: '28px' }}>
-                  info
-                </span>
-                <p>
-                  Please select two different stations to compute transit fare and route schedule.
-                </p>
+          {/* Dynamic Route Results Card */}
+          <div className="fare-result-card">
+            <div className="fare-result-header">
+              <span className="fare-line-badge">{routeInfo.line}</span>
+              <span className="fare-status-live">Dynamic Calculation</span>
+            </div>
+
+            <div className="fare-main-display">
+              <div className="fare-amount-block">
+                <span className="fare-currency">₹</span>
+                <span className="fare-amount">{Number(routeInfo.fare).toFixed(2)}</span>
               </div>
-            ) : (
-              <>
-                <div className="fare-metric-row">
-                  <div>
-                    <span className="fare-label">Dynamic Distance Fare</span>
-                    <div className="fare-big-number">{formatCurrency(routeInfo.fare)}</div>
-                  </div>
-                  <div className="fare-service-tag">
-                    <span className="material-symbols-outlined">bolt</span>
-                    <span>{routeInfo.line}</span>
-                  </div>
+              <div className="fare-label-block">
+                <span className="fare-headline">One-Way Smart Fare</span>
+                <span className="fare-sub">Auto-deducted at exit gate</span>
+              </div>
+            </div>
+
+            <div className="route-stats-grid">
+              <div className="route-stat-item">
+                <span className="material-symbols-outlined">timer</span>
+                <div>
+                  <div className="stat-value">{routeInfo.time} Mins</div>
+                  <div className="stat-sub">Est. Travel Time</div>
                 </div>
+              </div>
 
-                <div className="route-stats-grid">
-                  <div className="route-stat-item">
-                    <span className="material-symbols-outlined">timer</span>
-                    <div>
-                      <div className="stat-value">{routeInfo.time} Mins</div>
-                      <div className="stat-sub">Est. Travel Time</div>
-                    </div>
-                  </div>
-
-                  <div className="route-stat-item">
-                    <span className="material-symbols-outlined">distance</span>
-                    <div>
-                      <div className="stat-value">{routeInfo.dist}</div>
-                      <div className="stat-sub">Network Distance</div>
-                    </div>
-                  </div>
-
-                  <div className="route-stat-item">
-                    <span className="material-symbols-outlined">alt_route</span>
-                    <div>
-                      <div className="stat-value">{routeInfo.stops} Intermediate</div>
-                      <div className="stat-sub">Interchange Stops</div>
-                    </div>
-                  </div>
-
-                  <div className="route-stat-item">
-                    <span className="material-symbols-outlined">verified</span>
-                    <div>
-                      <div className="stat-value">₹5.00 Balance</div>
-                      <div className="stat-sub">Gate Entry Rule</div>
-                    </div>
-                  </div>
+              <div className="route-stat-item">
+                <span className="material-symbols-outlined">distance</span>
+                <div>
+                  <div className="stat-value">{routeInfo.dist}</div>
+                  <div className="stat-sub">Network Distance</div>
                 </div>
+              </div>
 
-                <div className="fare-action-footer">
-                  <Link
-                    to={`/entry`}
-                    className="btn btn-primary btn-block"
-                    style={{ height: '46px' }}
-                  >
-                    <span className="material-symbols-outlined">sensor_door</span>
-                    <span>Simulate Entry at Station #{originId}</span>
-                  </Link>
+              <div className="route-stat-item">
+                <span className="material-symbols-outlined">alt_route</span>
+                <div>
+                  <div className="stat-value">{routeInfo.stops} Intermediate</div>
+                  <div className="stat-sub">Interchange Stops</div>
                 </div>
-              </>
-            )}
+              </div>
+
+              <div className="route-stat-item">
+                <span className="material-symbols-outlined">verified</span>
+                <div>
+                  <div className="stat-value">₹5.00 Balance</div>
+                  <div className="stat-sub">Gate Entry Rule</div>
+                </div>
+              </div>
+            </div>
+
+            <div className="fare-action-footer">
+              <Link
+                to="/entry"
+                className="btn btn-primary btn-block"
+                style={{ height: '46px' }}
+              >
+                <span>Launch Gate Simulator</span>
+                <span className="material-symbols-outlined" style={{ fontSize: '18px' }}>
+                  login
+                </span>
+              </Link>
+            </div>
           </div>
         </div>
       </div>
