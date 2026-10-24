@@ -10,6 +10,8 @@ import EntryGate from './pages/EntryGate';
 import ExitGate from './pages/ExitGate';
 import TravelHistory from './pages/TravelHistory';
 import AdminDashboard from './pages/AdminDashboard';
+import Faq from './pages/Faq';
+import Profile from './pages/Profile';
 import './App.css';
 
 export default function App() {
@@ -21,8 +23,17 @@ export default function App() {
           <Route path="/" element={<Home />} />
           <Route path="/home" element={<Home />} />
           <Route path="/about" element={<Home />} />
+          <Route path="/faq" element={<Faq />} />
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
+          <Route
+            path="/profile"
+            element={
+              <ProtectedRoute>
+                <Profile />
+              </ProtectedRoute>
+            }
+          />
           <Route
             path="/wallet"
             element={

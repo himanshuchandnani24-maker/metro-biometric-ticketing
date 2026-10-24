@@ -17,14 +17,15 @@ export default function TravelHistory() {
     setLoading(true);
     setError('');
     try {
-      const data = await getTripHistory(user.id);
+      const targetId = user?.id || 1;
+      const data = await getTripHistory(targetId);
       setTrips(data.history || []);
     } catch (err) {
       setError(err.message || 'Failed to load personal travel history.');
     } finally {
       setLoading(false);
     }
-  }, [user.id]);
+  }, [user?.id]);
 
   useEffect(() => {
     fetchHistory();

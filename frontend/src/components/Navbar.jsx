@@ -19,10 +19,25 @@ export default function Navbar() {
   return (
     <nav className="navbar-stitch">
       <div className="navbar-inner">
-        {/* Brand Logo */}
-        <Link to="/" className="navbar-brand-link" onClick={closeMenu}>
-          <BrandLogo size="sm" layout="row" />
-        </Link>
+        {/* Left Side: Rider Profile Dashboard Button (When Authenticated) or Welcome Tag */}
+        <div className="navbar-left-section">
+          {isAuthenticated ? (
+            <Link to="/profile" className="nav-profile-chip-btn" onClick={closeMenu} title="Open Rider Profile & Dashboard">
+              <div className="avatar-circle">
+                {user?.name ? user.name.charAt(0).toUpperCase() : 'U'}
+              </div>
+              <div className="profile-chip-text">
+                <span className="chip-user-name">{user?.name?.split(' ')[0] || 'Rider'}</span>
+                <span className="chip-sub-label">Profile &amp; Wallet</span>
+              </div>
+            </Link>
+          ) : (
+            <div className="guest-welcome-tag">
+              <span className="status-indicator-dot" />
+              <span>Angin Transit Core</span>
+            </div>
+          )}
+        </div>
 
         {/* Mobile Toggle */}
         <button
@@ -37,7 +52,7 @@ export default function Navbar() {
           </span>
         </button>
 
-        {/* Navigation Items */}
+        {/* Center / Middle: Primary Navigation Tools */}
         <div className={`navbar-links-stitch ${menuOpen ? 'open' : ''}`}>
           <NavLink
             to="/"
@@ -53,19 +68,6 @@ export default function Navbar() {
 
           {isAuthenticated ? (
             <>
-              <NavLink
-                to="/wallet"
-                className={({ isActive }) =>
-                  `nav-link-stitch ${isActive ? 'active' : ''}`
-                }
-                onClick={closeMenu}
-              >
-                <span className="material-symbols-outlined nav-item-icon">
-                  account_balance_wallet
-                </span>
-                <span>Wallet</span>
-              </NavLink>
-
               <NavLink
                 to="/entry"
                 className={({ isActive }) =>
@@ -120,36 +122,26 @@ export default function Navbar() {
                 </NavLink>
               )}
 
-              {/* User Profile & Logout */}
-              <div className="nav-user-stitch">
-                <div className="user-avatar-chip">
-                  <div className="avatar-circle">
-                    {user?.name ? user.name.charAt(0).toUpperCase() : 'U'}
-                  </div>
-                  <span className="user-display-name">{user?.name}</span>
-                </div>
-                <button
-                  type="button"
-                  className="btn-logout-stitch"
-                  onClick={handleLogout}
-                  title="Sign out of account"
-                >
-                  <span className="material-symbols-outlined" style={{ fontSize: '18px' }}>
-                    logout
-                  </span>
-                  <span>Logout</span>
-                </button>
-              </div>
+              <button
+                type="button"
+                className="btn-logout-stitch mobile-logout-only"
+                onClick={handleLogout}
+              >
+                <span className="material-symbols-outlined" style={{ fontSize: '18px' }}>
+                  logout
+                </span>
+                <span>Logout</span>
+              </button>
             </>
           ) : (
-            <>
+            <div className="nav-auth-buttons">
               <NavLink
                 to="/register"
-                className="btn btn-primary"
-                style={{ padding: '0.55rem 1.15rem', fontSize: '0.875rem' }}
+                className="btn btn-primary nav-cta-btn"
                 onClick={closeMenu}
               >
-                Get Started
+                <span>Register</span>
+                <span className="material-symbols-outlined" style={{ fontSize: '16px' }}>arrow_forward</span>
               </NavLink>
               <NavLink
                 to="/login"
@@ -178,8 +170,15 @@ export default function Navbar() {
                 <span className="material-symbols-outlined nav-item-icon">admin_panel_settings</span>
                 <span>Admin Login</span>
               </a>
-            </>
+            </div>
           )}
+        </div>
+
+        {/* Right Side: Brand Logo Lockup */}
+        <div className="navbar-right-section">
+          <Link to="/" className="navbar-brand-link" onClick={closeMenu}>
+            <BrandLogo size="sm" layout="row" />
+          </Link>
         </div>
       </div>
     </nav>
