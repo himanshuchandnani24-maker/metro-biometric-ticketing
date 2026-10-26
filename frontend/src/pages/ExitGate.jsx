@@ -1,17 +1,14 @@
 import { useState } from 'react';
 import {
-  createWalletOrder,
-  topupWallet,
+  gateCreatePaymentOrder,
+  gateVerifyPayment,
   tripExit,
-  verifyWalletPayment,
 } from '../api/api';
-import { useAuth } from '../auth/AuthContext';
 import FingerprintPicker from '../components/FingerprintPicker';
 import RazorpayModal from '../components/RazorpayModal';
 import { formatCurrency, STATIONS } from '../constants';
 
 export default function ExitGate() {
-  const { user } = useAuth();
   const [stationId, setStationId] = useState('2');
   const [fingerprintFile, setFingerprintFile] = useState(null);
   const [loading, setLoading] = useState(false);
@@ -19,6 +16,7 @@ export default function ExitGate() {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [fareCharged, setFareCharged] = useState(null);
+  const [remainingBalance, setRemainingBalance] = useState(null);
   const [dueInfo, setDueInfo] = useState(null);
   const [showRazorpayModal, setShowRazorpayModal] = useState(false);
   const [orderInfo, setOrderInfo] = useState(null);
@@ -35,13 +33,18 @@ export default function ExitGate() {
     setDueInfo(null);
     setSuccess('');
     setFareCharged(null);
+    setRemainingBalance(null);
 
     try {
-      const data = await tripExit(user.id, Number(stationId), file);
+      const data = await tripExit(Number(stationId), file);
       setSuccess(data.message || 'Exit authenticated. Journey completed.');
       if (data.fare_charged !== undefined) {
         setFareCharged(data.fare_charged);
       }
+      if (data.remaining_balance !== undefined && data.remaining_balance !== null) {
+        setRemainingBalance(Number(data.remaining_balance));
+      }
+      setFingerprintFile(null);
     } catch (err) {
       if (err.data?.insufficient_balance || err.status === 402) {
         setDueInfo({
@@ -64,12 +67,13 @@ export default function ExitGate() {
   };
 
   const handleSimulatorSuccess = async (simulatedResponse) => {
-    if (!orderInfo) return;
+    if (!fingerprintFile) {
+      setError('Biometric fingerprint required for gate payment verification.');
+      return;
+    }
     setPayLoading(true);
     try {
-      await verifyWalletPayment({
-        user_id: user.id,
-        amount: orderInfo.amount,
+      await gateVerifyPayment(fingerprintFile, {
         razorpay_order_id: simulatedResponse.razorpay_order_id,
         razorpay_payment_id: simulatedResponse.razorpay_payment_id,
         razorpay_signature: simulatedResponse.razorpay_signature,
@@ -88,14 +92,16 @@ export default function ExitGate() {
   // Instant Gate Payment to clear fare due and unlock gate
   const handlePayAtGate = async () => {
     if (!dueInfo) return;
+    if (!fingerprintFile) {
+      setError('Please keep your fingerprint scan ready to authorize gate payment.');
+      return;
+    }
     setPayLoading(true);
     setError('');
 
-    const amountToPay = dueInfo.amountNeeded;
-
     try {
-      // 1. Create order
-      const orderData = await createWalletOrder(user.id, amountToPay);
+      // 1. Create order on server using fingerprint + stationId (no amount sent from client)
+      const orderData = await gateCreatePaymentOrder(Number(stationId), fingerprintFile);
       setOrderInfo(orderData);
 
       // 2. Check if using test/demo keys, simulated order, or offline
@@ -109,20 +115,19 @@ export default function ExitGate() {
       }
 
       // 3. Launch live Razorpay popup for real test keys
+      const amountToPay = orderData.amount || dueInfo.amountNeeded;
       const options = {
         key: orderData.key_id || 'rzp_test_metroDemoKey',
         amount: orderData.amount_paise || Math.round(amountToPay * 100),
         currency: 'INR',
         name: 'Angin Metro — Gate Exit Terminal',
-        description: `Settle Journey Fare (${formatCurrency(amountToPay)}) - Rider #${user.id}`,
+        description: `Settle Journey Fare (${formatCurrency(amountToPay)})`,
         image: '/angin-logo.png',
         order_id: orderData.order_id,
         handler: async function (response) {
           try {
             setPayLoading(true);
-            await verifyWalletPayment({
-              user_id: user.id,
-              amount: amountToPay,
+            await gateVerifyPayment(fingerprintFile, {
               razorpay_order_id: response.razorpay_order_id || orderData.order_id,
               razorpay_payment_id: response.razorpay_payment_id || `pay_${Date.now()}`,
               razorpay_signature: response.razorpay_signature || 'simulated_test_sig',
@@ -137,8 +142,8 @@ export default function ExitGate() {
           }
         },
         prefill: {
-          name: user.name || 'Metro Rider',
-          email: user.email || 'rider@metro.local',
+          name: 'Metro Rider',
+          email: 'rider@metro.local',
           contact: '9876543210',
         },
         theme: { color: '#006699' },
@@ -166,7 +171,9 @@ export default function ExitGate() {
       <header className="page-header">
         <div className="section-badge" style={{ marginBottom: '0.5rem' }}>Gate Turnstile Simulator</div>
         <h1>Station Exit Gate</h1>
-        <p>Verify your biometric fingerprint at your destination station to calculate fare and complete your journey.</p>
+        <p>
+          Public Turnstile: Open to everyone without login or sign-in. Upload any fingerprint format (.dat, .bin, 1,532-byte template, .png, .jpg) to calculate distance fare, deduct balance, and complete journey.
+        </p>
       </header>
 
       {error && !dueInfo && (
@@ -219,6 +226,11 @@ export default function ExitGate() {
             {fareCharged !== null && (
               <div style={{ marginTop: '0.25rem' }}>
                 Automated Fare Deducted: <strong>{formatCurrency(fareCharged)}</strong>
+                {remainingBalance !== null && (
+                  <span style={{ marginLeft: '0.75rem' }}>
+                    • Remaining Wallet Balance: <strong>{formatCurrency(remainingBalance)}</strong>
+                  </span>
+                )}
               </div>
             )}
           </div>
@@ -292,7 +304,7 @@ export default function ExitGate() {
         isOpen={showRazorpayModal}
         onClose={() => setShowRazorpayModal(false)}
         amount={orderInfo?.amount || dueInfo?.amountNeeded || 0}
-        description={`Settle Transit Fare at Gate — Rider #${user?.id}`}
+        description="Settle Transit Fare at Gate"
         onSuccess={handleSimulatorSuccess}
         onFailure={(msg) => setError(msg)}
       />

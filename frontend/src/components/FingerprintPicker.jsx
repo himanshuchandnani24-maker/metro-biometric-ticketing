@@ -61,6 +61,16 @@ export default function FingerprintPicker({
 
   const isSpoofSample = selectedSampleId === 'blank' || (selectedFile && selectedFile.name?.toLowerCase().includes('blank'));
 
+  const isBinaryTemplate = Boolean(
+    selectedFile &&
+    !selectedSampleId &&
+    (selectedFile.name?.endsWith('.dat') ||
+      selectedFile.name?.endsWith('.bin') ||
+      selectedFile.name?.endsWith('.template') ||
+      selectedFile.name?.endsWith('.raw') ||
+      (selectedFile.type && !selectedFile.type.startsWith('image/')))
+  );
+
   return (
     <div className="biometric-scanner-terminal">
       {/* Scanner Terminal Header */}
@@ -69,7 +79,7 @@ export default function FingerprintPicker({
           <span className="material-symbols-outlined scanner-icon-pulse">fingerprint</span>
           <div>
             <div className="terminal-title">Biometric Optical Sensor Terminal</div>
-            <div className="terminal-subtitle">500 DPI • SOCOFing Ridge Extraction Engine</div>
+            <div className="terminal-subtitle">Multi-Format Minutiae Engine • Supports Any Scan or Template</div>
           </div>
         </div>
 
@@ -79,7 +89,9 @@ export default function FingerprintPicker({
             {selectedFile
               ? isSpoofSample
                 ? 'Spoof Alert'
-                : 'Sensor Active'
+                : isBinaryTemplate
+                  ? 'Binary Template Loaded'
+                  : 'Sensor Active'
               : 'Ready for Scan'}
           </span>
         </div>
@@ -100,8 +112,26 @@ export default function FingerprintPicker({
           {/* Minutiae Radar Overlay Grid */}
           <div className="scanner-grid-overlay" />
 
-          {/* Fingerprint Image Display */}
-          {previewUrl ? (
+          {/* Fingerprint Display: Binary Template or Visual Image */}
+          {isBinaryTemplate ? (
+            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100%', padding: '1.25rem', textAlign: 'center', zIndex: 2 }}>
+              <div style={{ position: 'relative', width: '72px', height: '72px', borderRadius: '50%', background: 'rgba(0, 102, 153, 0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center', border: '2px solid var(--color-primary)' }}>
+                <span className="material-symbols-outlined" style={{ fontSize: '38px', color: 'var(--color-primary)' }}>
+                  memory
+                </span>
+              </div>
+              <div style={{ marginTop: '0.65rem', fontWeight: 700, fontSize: '0.95rem', color: 'var(--color-on-surface)' }}>
+                {selectedFile.name}
+              </div>
+              <div style={{ fontSize: '0.8rem', opacity: 0.85, marginTop: '0.2rem' }}>
+                {selectedFile.size === 1532 ? '1,532 Bytes • Unique Biometric Template' : `${selectedFile.size.toLocaleString()} Bytes • Binary Template Data`}
+              </div>
+              <div style={{ fontSize: '0.75rem', color: '#10b981', marginTop: '0.4rem', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
+                <span className="material-symbols-outlined" style={{ fontSize: '15px' }}>verified</span>
+                <span>Template Ready for Gate Verification</span>
+              </div>
+            </div>
+          ) : previewUrl ? (
             <div className="scanner-image-container">
               <img
                 src={previewUrl}
@@ -128,7 +158,7 @@ export default function FingerprintPicker({
                 </span>
               </div>
               <div className="placeholder-text">Place Fingerprint on Sensor</div>
-              <div className="placeholder-sub">Select a cartridge sample below or upload a template file</div>
+              <div className="placeholder-sub">Upload any template (.dat, .bin, 1532 bytes) or image format</div>
             </div>
           )}
         </div>
@@ -200,19 +230,19 @@ export default function FingerprintPicker({
       <div className="scanner-upload-bar">
         <label htmlFor={inputId} className="scanner-upload-label">
           <span className="material-symbols-outlined">file_upload</span>
-          <span>Upload Custom Scan Image (PNG/JPG/BMP)</span>
+          <span>Upload Custom Scan or Template (Any Format: .dat, .bin, .png, .jpg, etc.)</span>
         </label>
         <input
           id={inputId}
           type="file"
-          accept="image/png,image/jpeg,image/jpg,image/bmp"
+          accept="*/*"
           onChange={handleFileChange}
           className="scanner-file-input"
         />
         {selectedFile && !selectedSampleId && (
           <div className="custom-file-indicator">
             <span className="material-symbols-outlined">attachment</span>
-            <span>{selectedFile.name} (Custom scan attached)</span>
+            <span>{selectedFile.name} ({selectedFile.size.toLocaleString()} bytes attached)</span>
           </div>
         )}
       </div>

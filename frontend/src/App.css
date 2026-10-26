@@ -317,3 +317,55 @@
     align-items: start;
   }
 }
+
+/* =========================================================================
+   GATE KIOSK BARE LAYOUT (PUBLIC TERMINALS)
+   ========================================================================= */
+
+.gate-kiosk-bar {
+  background: rgba(247, 249, 251, 0.92);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-bottom: 1px solid rgba(195, 198, 209, 0.35);
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  box-shadow: 0 1px 3px rgba(0, 30, 64, 0.04);
+}
+
+.gate-kiosk-inner {
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 0.75rem 1.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  min-height: 60px;
+  gap: 1rem;
+}
+
+.gate-kiosk-brand {
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+}
+
+.gate-kiosk-pill {
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--color-on-surface-variant, #475569);
+  padding: 0.25rem 0.65rem;
+  background: rgba(0, 102, 153, 0.08);
+  border-radius: 9999px;
+  display: inline-flex;
+  align-items: center;
+}
+
+.gate-kiosk-nav {
+  display: flex;
+  gap: 0.75rem;
+  align-items: center;
+}
+

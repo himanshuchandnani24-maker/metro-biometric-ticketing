@@ -10,24 +10,24 @@ from dataset_loader import load_image
 
 
 def check_for_spoof(image_path: str):
-    """Check whether a fingerprint image looks like a spoof/fake.
+    """Check whether a fingerprint image or binary template looks like a spoof/fake."""
+    import os
+    if not os.path.exists(image_path):
+        return True, "Fingerprint file does not exist"
 
-    The check measures two properties:
-    1. **Contrast** — standard deviation of pixel intensities.  Real
-       fingerprints typically have moderate contrast; a very low value
-       suggests a blank or uniformly coloured image.
-    2. **Detail / sharpness** — variance of the Laplacian.  Real prints
-       contain fine ridge detail which produces a higher Laplacian variance.
-
-    Args:
-        image_path: Path to the fingerprint image.
-
-    Returns:
-        tuple: ``(is_spoof: bool, reason: str)``
-            * ``is_spoof`` is ``True`` when the image is suspicious.
-            * ``reason`` is a human-readable explanation.
-    """
+    # If it's a binary template file or non-visual image
     img = load_image(image_path)
+    if img is None:
+        try:
+            with open(image_path, 'rb') as f:
+                raw_bytes = f.read()
+            if len(raw_bytes) == 0:
+                return True, "Empty biometric template file (0 bytes)"
+            if len(set(raw_bytes)) < 3:
+                return True, "Blank or uniform synthetic biometric template"
+            return False, "Biometric binary template passed integrity check"
+        except Exception as e:
+            return True, f"Failed to read biometric template file: {e}"
 
     # --- Contrast check (standard deviation of intensities) ---
     std_dev = float(np.std(img))

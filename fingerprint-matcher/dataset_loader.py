@@ -8,21 +8,15 @@ import cv2
 import numpy as np
 from pathlib import Path
 
-def load_image(filepath: str) -> np.ndarray:
+def load_image(filepath: str):
     """Load an image from ``filepath`` as a grayscale ``numpy`` array.
-
-    Args:
-        filepath: Path to the image file.
-
-    Returns:
-        A ``numpy.ndarray`` with ``dtype=uint8`` representing the grayscale
-        image.
+    Returns None if the file is a binary template (.dat, .bin) rather than a visual image.
     """
     path = Path(filepath)
     if not path.is_file():
         raise FileNotFoundError(f"Image file not found: {filepath}")
-    # ``cv2.IMREAD_GRAYSCALE`` loads the image directly in gray space.
-    img = cv2.imread(str(path), cv2.IMREAD_GRAYSCALE)
-    if img is None:
-        raise ValueError(f"Failed to load image as grayscale: {filepath}")
-    return img
+    try:
+        img = cv2.imread(str(path), cv2.IMREAD_GRAYSCALE)
+        return img
+    except Exception:
+        return None

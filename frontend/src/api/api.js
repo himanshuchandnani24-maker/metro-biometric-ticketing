@@ -49,6 +49,15 @@ async function multipartRequest(path, formData) {
   return parseResponse(response);
 }
 
+async function publicMultipartRequest(path, formData) {
+  // Public gate calls must NOT attach an Authorization header or credentials
+  const response = await fetch(`${API_BASE}${path}`, {
+    method: 'POST',
+    body: formData,
+  });
+  return parseResponse(response);
+}
+
 export async function registerUser({ name, email, password }) {
   return request('/register', {
     method: 'POST',
@@ -96,6 +105,11 @@ export async function topupWallet(userId, amount) {
   });
 }
 
+export async function generateFingerprintTemplate(userId) {
+  const query = userId ? `?user_id=${userId}` : '';
+  return request(`/fingerprint/generate-template${query}`);
+}
+
 export async function registerFingerprint(userId, file) {
   const formData = new FormData();
   formData.append('user_id', String(userId));
@@ -114,20 +128,34 @@ export async function verifyFingerprint(userId, file) {
   return multipartRequest('/fingerprint/verify', formData);
 }
 
-export async function tripEntry(userId, entryStationId, file) {
+export async function tripEntry(stationId, fingerprintFile) {
   const formData = new FormData();
-  formData.append('user_id', String(userId));
-  formData.append('entry_station_id', String(entryStationId));
-  formData.append('fingerprint', file);
-  return multipartRequest('/trip/entry', formData);
+  formData.append('entry_station_id', String(stationId));
+  formData.append('fingerprint', fingerprintFile);
+  return publicMultipartRequest('/trip/entry', formData);
 }
 
-export async function tripExit(userId, exitStationId, file) {
+export async function tripExit(stationId, fingerprintFile) {
   const formData = new FormData();
-  formData.append('user_id', String(userId));
-  formData.append('exit_station_id', String(exitStationId));
-  formData.append('fingerprint', file);
-  return multipartRequest('/trip/exit', formData);
+  formData.append('exit_station_id', String(stationId));
+  formData.append('fingerprint', fingerprintFile);
+  return publicMultipartRequest('/trip/exit', formData);
+}
+
+export async function gateCreatePaymentOrder(stationId, fingerprintFile) {
+  const formData = new FormData();
+  formData.append('exit_station_id', String(stationId));
+  formData.append('fingerprint', fingerprintFile);
+  return publicMultipartRequest('/gate/pay/order', formData);
+}
+
+export async function gateVerifyPayment(fingerprintFile, { razorpay_order_id, razorpay_payment_id, razorpay_signature }) {
+  const formData = new FormData();
+  formData.append('fingerprint', fingerprintFile);
+  formData.append('razorpay_order_id', razorpay_order_id || '');
+  formData.append('razorpay_payment_id', razorpay_payment_id || '');
+  formData.append('razorpay_signature', razorpay_signature || '');
+  return publicMultipartRequest('/gate/pay/verify', formData);
 }
 
 export async function getTripHistory(userId) {

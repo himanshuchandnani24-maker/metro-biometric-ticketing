@@ -1,25 +1,23 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { tripEntry } from '../api/api';
-import { useAuth } from '../auth/AuthContext';
 import FingerprintPicker from '../components/FingerprintPicker';
 import { STATIONS, MIN_WALLET_BALANCE, formatCurrency, stationName } from '../constants';
 
 export default function EntryGate() {
-  const { user } = useAuth();
   const [stationId, setStationId] = useState('1');
   const [fingerprintFile, setFingerprintFile] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
+  const [verifiedBalance, setVerifiedBalance] = useState(null);
   const [gateStatus, setGateStatus] = useState('idle'); // 'idle' | 'scanning' | 'open' | 'rejected'
-
-  const userId = user?.id || 1;
 
   const handleScanAndEnter = async (event) => {
     if (event) event.preventDefault();
     setError('');
     setSuccess('');
+    setVerifiedBalance(null);
 
     if (!fingerprintFile) {
       setError('Please place or select your fingerprint on the scanner first.');
@@ -38,20 +36,13 @@ export default function EntryGate() {
     setGateStatus('scanning');
 
     try {
-      const data = await tripEntry(userId, Number(stationId), fingerprintFile);
+      const data = await tripEntry(Number(stationId), fingerprintFile);
       setSuccess(data.message || `Biometric verified. Gate turnstile opened at ${stationName(stationId)}.`);
+      if (data.balance !== undefined && data.balance !== null) {
+        setVerifiedBalance(Number(data.balance));
+      }
       setGateStatus('open');
-
-      // Record active trip in local session
-      localStorage.setItem(
-        'metro_active_trip',
-        JSON.stringify({
-          user_id: userId,
-          entry_station_id: Number(stationId),
-          entry_station_name: stationName(stationId),
-          entry_time: new Date().toISOString(),
-        })
-      );
+      setFingerprintFile(null);
     } catch (err) {
       setError(err.message || 'Entry authorization failed.');
       setGateStatus('rejected');
@@ -64,6 +55,7 @@ export default function EntryGate() {
     setGateStatus('idle');
     setSuccess('');
     setError('');
+    setVerifiedBalance(null);
     setFingerprintFile(null);
   };
 
@@ -76,7 +68,9 @@ export default function EntryGate() {
           <span>Station Entry Turnstile Simulator</span>
         </div>
         <h1>Station Entry Gate</h1>
-        <p>Scan your biometric fingerprint at the boarding turnstile to verify wallet sufficiency and initiate your transit journey.</p>
+        <p>
+          Public Turnstile: Open to everyone without login or sign-in. Upload any fingerprint format (.dat, .bin, 1,532-byte template, .png, .jpg) to verify wallet sufficiency and board.
+        </p>
       </header>
 
       {/* Visual Metro Turnstile Gate Barrier Display */}
@@ -171,6 +165,11 @@ export default function EntryGate() {
           <span className="material-symbols-outlined">check_circle</span>
           <div>
             <strong>{success}</strong>
+            {verifiedBalance !== null && (
+              <div style={{ marginTop: '0.35rem', fontSize: '0.9rem' }}>
+                Verified Biometric Wallet Balance: <strong>{formatCurrency(verifiedBalance)}</strong> (Min. ₹5.00 Sufficiency Verified)
+              </div>
+            )}
           </div>
         </div>
       )}

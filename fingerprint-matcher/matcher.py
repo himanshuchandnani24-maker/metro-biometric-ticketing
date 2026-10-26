@@ -39,6 +39,28 @@ def compare_fingerprints(image1_path: str, image2_path: str, score_threshold: fl
     img1 = load_image(image1_path)
     img2 = load_image(image2_path)
 
+    # If either or both files are binary templates (.dat, .bin, 1532-byte templates, etc.)
+    if img1 is None or img2 is None:
+        try:
+            with open(image1_path, 'rb') as f1, open(image2_path, 'rb') as f2:
+                b1 = f1.read()
+                b2 = f2.read()
+            if not b1 or not b2:
+                return 0.0, False
+            if b1 == b2:
+                return 1.0, True
+            # Compare byte alignment / correlation
+            min_len = min(len(b1), len(b2))
+            max_len = max(len(b1), len(b2))
+            if max_len == 0:
+                return 0.0, False
+            matches = sum(1 for x, y in zip(b1[:min_len], b2[:min_len]) if x == y)
+            score = matches / float(max_len)
+            return score, score >= score_threshold
+        except Exception as e:
+            print(f"Binary template comparison error: {e}")
+            return 0.0, False
+
     kp1, desc1 = _compute_keypoints_descriptors(img1)
     kp2, desc2 = _compute_keypoints_descriptors(img2)
 

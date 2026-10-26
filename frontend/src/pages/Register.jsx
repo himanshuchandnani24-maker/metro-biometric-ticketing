@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Link, Navigate, useNavigate } from 'react-router-dom';
-import { registerUser, loginUser, registerFingerprint } from '../api/api';
+import { registerUser, loginUser, registerFingerprint, generateFingerprintTemplate } from '../api/api';
 import { useAuth } from '../auth/AuthContext';
 import FingerprintPicker from '../components/FingerprintPicker';
 import AuthBackground from '../components/AuthBackground';
@@ -16,6 +16,7 @@ export default function Register() {
   const [pendingUser, setPendingUser] = useState(null);
   const [pendingToken, setPendingToken] = useState(null);
   const [loading, setLoading] = useState(false);
+  const [generatingTemplate, setGeneratingTemplate] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
 
@@ -93,6 +94,41 @@ export default function Register() {
     }
   };
 
+  const handleGenerateTemplate = async () => {
+    setGeneratingTemplate(true);
+    setError('');
+    setSuccess('');
+    try {
+      const data = await generateFingerprintTemplate(pendingUser?.id);
+      const binaryString = atob(data.template_base64);
+      const bytes = new Uint8Array(binaryString.length);
+      for (let i = 0; i < binaryString.length; i++) {
+        bytes[i] = binaryString.charCodeAt(i);
+      }
+      const file = new File([bytes], `fingerprint_u${pendingUser?.id || 'new'}_template.dat`, {
+        type: 'application/octet-stream',
+      });
+      setFingerprintFile(file);
+      setSuccess('Unique 1,532-byte template generated! You can download it below to keep on your device.');
+    } catch (err) {
+      setError(err.message || 'Failed to generate biometric template.');
+    } finally {
+      setGeneratingTemplate(false);
+    }
+  };
+
+  const handleDownloadTemplate = () => {
+    if (!fingerprintFile) return;
+    const url = URL.createObjectURL(fingerprintFile);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = fingerprintFile.name || 'fingerprint_template.dat';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  };
+
   const handleSkipFingerprint = () => {
     if (!pendingUser) return;
     login(pendingUser, pendingToken);
@@ -124,8 +160,8 @@ export default function Register() {
             </>
           ) : (
             <>
-              <h1>Register Biometrics</h1>
-              <p>Enroll your biometric template for instant contactless gate access.</p>
+              <h1>Enroll Biometric Identity</h1>
+              <p>Generate a unique 1,532-byte template, upload any file, or download your template.</p>
             </>
           )}
         </div>
@@ -251,6 +287,74 @@ export default function Register() {
 
         {step === 2 && (
           <form onSubmit={handleFingerprintSubmit} className="auth-form-fields">
+            {/* Quick Template Generator & Downloader Card */}
+            <div
+              style={{
+                background: 'rgba(0, 102, 153, 0.06)',
+                border: '1px solid rgba(0, 102, 153, 0.18)',
+                borderRadius: 'var(--radius-md, 12px)',
+                padding: '1.15rem',
+                marginBottom: '1rem',
+              }}
+            >
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.4rem' }}>
+                <span className="material-symbols-outlined text-primary" style={{ fontSize: '22px' }}>
+                  auto_awesome
+                </span>
+                <strong style={{ fontSize: '0.95rem' }}>Biometric Template Options</strong>
+              </div>
+              <p style={{ fontSize: '0.825rem', opacity: 0.85, margin: '0 0 0.85rem', lineHeight: 1.4 }}>
+                Generate a unique 1,532-byte template, upload your own file (any format: .dat, .bin, .png, .jpg), or download your biometric file to scan at gates without signing in.
+              </p>
+
+              <div style={{ display: 'flex', gap: '0.65rem', flexWrap: 'wrap' }}>
+                <button
+                  type="button"
+                  className="btn btn-primary"
+                  onClick={handleGenerateTemplate}
+                  disabled={generatingTemplate || loading}
+                  style={{
+                    padding: '0.55rem 1rem',
+                    fontSize: '0.85rem',
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '0.4rem',
+                  }}
+                >
+                  {generatingTemplate ? (
+                    <span className="loading-spinner" />
+                  ) : (
+                    <>
+                      <span className="material-symbols-outlined" style={{ fontSize: '18px' }}>
+                        fingerprint
+                      </span>
+                      <span>Generate Unique 1,532-Byte Template</span>
+                    </>
+                  )}
+                </button>
+
+                {fingerprintFile && (
+                  <button
+                    type="button"
+                    className="btn btn-secondary"
+                    onClick={handleDownloadTemplate}
+                    style={{
+                      padding: '0.55rem 1rem',
+                      fontSize: '0.85rem',
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: '0.4rem',
+                    }}
+                  >
+                    <span className="material-symbols-outlined" style={{ fontSize: '18px' }}>
+                      download
+                    </span>
+                    <span>Download Template (.dat)</span>
+                  </button>
+                )}
+              </div>
+            </div>
+
             <FingerprintPicker
               selectedFile={fingerprintFile}
               onFileSelect={(file) => setFingerprintFile(file)}

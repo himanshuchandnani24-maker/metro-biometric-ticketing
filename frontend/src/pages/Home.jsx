@@ -32,43 +32,37 @@ export default function Home() {
           </p>
 
           <div className="hero-cta-group">
+            {/* Public Turnstiles Available for Everyone (No login / sign-in required) */}
+            <Link to="/entry" className="btn btn-primary hero-btn" style={{ fontWeight: 700 }}>
+              <span className="material-symbols-outlined">door_front</span>
+              <span>Walk-Through Entry Gate</span>
+            </Link>
+            <Link to="/exit" className="btn btn-secondary hero-btn" style={{ fontWeight: 600 }}>
+              <span className="material-symbols-outlined">logout</span>
+              <span>Destination Exit Gate</span>
+            </Link>
+
             {isAuthenticated ? (
-              <>
-                <Link to="/wallet" className="btn btn-primary hero-btn">
-                  <span className="material-symbols-outlined">account_balance_wallet</span>
-                  <span>My Digital Wallet</span>
-                </Link>
-                <Link to="/entry" className="btn btn-secondary hero-btn">
-                  <span className="material-symbols-outlined">door_front</span>
-                  <span>Open Gate Simulator</span>
-                </Link>
-                <Link to="/admin" className="btn btn-secondary hero-btn">
-                  <span className="material-symbols-outlined">dashboard</span>
-                  <span>Admin Dashboard</span>
-                </Link>
-              </>
+              <Link to="/wallet" className="btn btn-secondary hero-btn">
+                <span className="material-symbols-outlined">account_balance_wallet</span>
+                <span>My Wallet &amp; Biometrics</span>
+              </Link>
             ) : (
               <>
-                <Link to="/register" className="btn btn-primary hero-btn">
-                  <span>Get Started</span>
-                  <span className="material-symbols-outlined">arrow_forward</span>
+                <Link to="/register" className="btn btn-secondary hero-btn">
+                  <span className="material-symbols-outlined">fingerprint</span>
+                  <span>Register &amp; Gen 1532 Template</span>
                 </Link>
                 <Link to="/login" className="btn btn-secondary hero-btn">
                   <span>Passenger Login</span>
                 </Link>
-                <a
-                  href="#admin-login-box"
-                  className="btn btn-secondary hero-btn"
-                  onClick={(e) => {
-                    e.preventDefault();
-                    document.getElementById('admin-login-box')?.scrollIntoView({ behavior: 'smooth' });
-                  }}
-                >
-                  <span className="material-symbols-outlined">admin_panel_settings</span>
-                  <span>Admin Login</span>
-                </a>
               </>
             )}
+          </div>
+
+          <div style={{ margin: '0.75rem 0 0', display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.85rem', color: 'var(--color-primary-fixed-dim, #a3e635)', opacity: 0.95 }}>
+            <span className="turnstile-led-dot" style={{ display: 'inline-block', width: '8px', height: '8px', borderRadius: '50%', background: '#10b981' }} />
+            <span>Public Turnstiles Active • Touch Sensor with Any Fingerprint Format (.dat, .bin, .png, .jpg) • No Login Needed</span>
           </div>
 
           {/* Quick Telemetry Highlights Bar */}

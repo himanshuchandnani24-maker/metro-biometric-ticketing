@@ -66,33 +66,34 @@ export default function Navbar() {
             <span>Home</span>
           </NavLink>
 
+          <NavLink
+            to="/entry"
+            className={({ isActive }) =>
+              `nav-link-stitch ${isActive ? 'active' : ''}`
+            }
+            onClick={closeMenu}
+          >
+            <span className="material-symbols-outlined nav-item-icon">
+              login
+            </span>
+            <span>Entry Gate</span>
+          </NavLink>
+
+          <NavLink
+            to="/exit"
+            className={({ isActive }) =>
+              `nav-link-stitch ${isActive ? 'active' : ''}`
+            }
+            onClick={closeMenu}
+          >
+            <span className="material-symbols-outlined nav-item-icon">
+              logout
+            </span>
+            <span>Exit Gate</span>
+          </NavLink>
+
           {isAuthenticated ? (
             <>
-              <NavLink
-                to="/entry"
-                className={({ isActive }) =>
-                  `nav-link-stitch ${isActive ? 'active' : ''}`
-                }
-                onClick={closeMenu}
-              >
-                <span className="material-symbols-outlined nav-item-icon">
-                  login
-                </span>
-                <span>Entry Gate</span>
-              </NavLink>
-
-              <NavLink
-                to="/exit"
-                className={({ isActive }) =>
-                  `nav-link-stitch ${isActive ? 'active' : ''}`
-                }
-                onClick={closeMenu}
-              >
-                <span className="material-symbols-outlined nav-item-icon">
-                  logout
-                </span>
-                <span>Exit Gate</span>
-              </NavLink>
 
               <NavLink
                 to="/history"

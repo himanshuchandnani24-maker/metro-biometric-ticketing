@@ -4,40 +4,51 @@ from models.wallet_model import get_wallet_balance
 
 def enter_station(user_id, entry_station_id):
     conn = get_db_connection()
-    if not conn: return {"success": False, "message": "Database connection error"}
+    if not conn:
+        return {"success": False, "message": "Database connection error"}
     
     try:
         cursor = conn.cursor(dictionary=True)
-        
-        # Check if already in progress
+        conn.start_transaction()
+
+        # Lock the user's wallet row
+        cursor.execute("SELECT id, balance FROM wallets WHERE user_id = %s FOR UPDATE", (user_id,))
+        wallet = cursor.fetchone()
+        if not wallet:
+            conn.rollback()
+            return {"success": False, "message": "Wallet not found for user"}
+
+        # Check if user already has an active trip in progress
         cursor.execute("SELECT id FROM trips WHERE user_id = %s AND status = 'IN_PROGRESS'", (user_id,))
         if cursor.fetchone():
+            conn.rollback()
             return {"success": False, "message": "User already has an active trip"}
-            
-        # Check wallet balance
-        balance = get_wallet_balance(user_id)
+
+        # Check balance >= max_fare
         max_fare = get_max_fare()
-        
+        balance = wallet['balance']
         if balance is None or float(balance) < float(max_fare):
-            # Log fraud alert or failed trip attempt
             cursor.execute(
                 "INSERT INTO fraud_alerts (user_id, reason) VALUES (%s, %s)",
                 (user_id, "Insufficient balance at entry")
             )
             conn.commit()
-            return {"success": False, "message": f"Insufficient balance. Minimum required is {max_fare}"}
-            
-        # Create trip
+            return {"success": False, "message": f"Insufficient balance. Minimum required is ₹{float(max_fare):.2f}"}
+
+        # Insert active trip
         cursor.execute(
             "INSERT INTO trips (user_id, entry_station_id, status) VALUES (%s, %s, 'IN_PROGRESS')",
             (user_id, entry_station_id)
         )
         conn.commit()
-        return {"success": True, "message": "Entry successful"}
-        
+        return {"success": True, "message": "Entry successful", "balance": float(balance)}
+
     except Exception as e:
         print(f"Error at entry: {e}")
-        conn.rollback()
+        try:
+            conn.rollback()
+        except Exception:
+            pass
         return {"success": False, "message": f"Error during entry: {e}"}
     finally:
         conn.close()
@@ -96,6 +107,7 @@ def exit_station(user_id, exit_station_id):
             }
             
         # Deduct fare and complete trip
+        remaining_balance = float(balance) - float(fare_amount)
         cursor.execute(
             "UPDATE wallets SET balance = balance - %s WHERE user_id = %s",
             (fare_amount, user_id)
@@ -106,7 +118,12 @@ def exit_station(user_id, exit_station_id):
         )
         
         conn.commit()
-        return {"success": True, "message": "Exit successful", "fare_charged": fare_amount}
+        return {
+            "success": True,
+            "message": "Exit successful",
+            "fare_charged": float(fare_amount),
+            "remaining_balance": float(remaining_balance)
+        }
         
     except Exception as e:
         print(f"Error at exit: {e}")
